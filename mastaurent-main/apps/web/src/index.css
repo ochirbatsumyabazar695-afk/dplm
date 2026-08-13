@@ -1,0 +1,163 @@
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   Masteurent — Swiss editorial design system.
+   Дүрэм: цаасан суурь, үсэг зураас хоёроор бүтэц гаргана, сүүдэр бараг үгүй.
+   Tenant бүрийн brand өнгө --accent-аар шахагдаж ирнэ.
+--------------------------------------------------------------------------- */
+:root {
+  --accent: #12110f;
+  --accent-soft: #12110f14;
+}
+
+@theme {
+  --font-sans:
+    'Helvetica Neue', 'Inter', Helvetica, Arial, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Цаас, бэх */
+  --color-bg: #f4f3f0;
+  --color-paper: #efedE8;
+  --color-surface: #ffffff;
+  --color-line: #dedbd4;
+  --color-line-strong: #bfbbb2;
+  --color-ink: #12110f;
+  --color-muted: #6b6862;
+  --color-faint: #9c988f;
+
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-ok: #3f6f4f;
+  --color-warn: #a1610f;
+  --color-bad: #9b2c22;
+
+  --radius-card: 2px;
+  --radius-btn: 999px;
+
+  --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    overscroll-behavior-y: none;
+  }
+
+  /* Editorial-ийн гол зарчим: том хэмжээ — чанга сөрөг tracking */
+  h1,
+  h2,
+  h3 {
+    font-weight: 500;
+    letter-spacing: -0.03em;
+  }
+
+  ::selection {
+    background: var(--color-ink);
+    color: var(--color-bg);
+  }
+
+  ::-webkit-scrollbar {
+    width: 9px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-line-strong);
+    border: 3px solid var(--color-bg);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+@layer utilities {
+  /* Хөвөгч capsule navigation-ий шил */
+  .glass {
+    background: rgba(244, 243, 240, 0.78);
+    backdrop-filter: saturate(160%) blur(18px);
+    -webkit-backdrop-filter: saturate(160%) blur(18px);
+  }
+
+  /* Жижиг том үсэгт шошго — Swiss editorial-ийн гарын үсэг */
+  .label {
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  /* Дугаарлалт: 01 / 02 / 03 */
+  .numeral {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+  }
+
+  /* Display хэмжээний толгой */
+  .display {
+    font-weight: 500;
+    letter-spacing: -0.045em;
+    line-height: 0.92;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, #e9e7e2 25%, #dedbd4 37%, #e9e7e2 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.5s ease infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0 50%;
+    }
+  }
+
+  /* Зурааснууд дээр суурилсан editorial grid */
+  .rule {
+    border-top: 1px solid var(--color-line);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

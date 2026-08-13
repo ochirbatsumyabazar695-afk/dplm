@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import { prisma } from '../db.js';
+import { asyncHandler, notFound } from '../lib/http.js';
+import { requireAccount } from '../middleware/auth.js';
+export const addressesRouter = Router();
+addressesRouter.use(requireAccount);
+const schema = z.object({ label: z.string().min(1).max(40), detail: z.string().min(4).max(300), latitude: z.number().min(-90).max(90), longitude: z.number().min(-180).max(180) });
+addressesRouter.get('/', asyncHandler(async (req, res) => res.json({ addresses: await prisma.address.findMany({ where: { accountId: req.account!.id }, orderBy: { createdAt: 'desc' } }) })));
+addressesRouter.post('/', asyncHandler(async (req, res) => res.status(201).json({ address: await prisma.address.create({ data: { ...schema.parse(req.body), accountId: req.account!.id } }) })));
+addressesRouter.delete('/:id', asyncHandler(async (req, res) => { const { count } = await prisma.address.deleteMany({ where: { id: req.params.id, accountId: req.account!.id } }); if (!count) throw notFound('Хаяг олдсонгүй'); res.json({ ok: true }); }));

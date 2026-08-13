@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Tenant — нэг ресторан = нэг tenant. Бүх өгөгдөл эндээс салбарлана.
+// ---------------------------------------------------------------------------
+model Tenant {
+  id          String   @id @default(cuid())
+  slug        String   @unique // burger-house -> /t/burger-house
+  name        String
+  tagline     String?  @db.Text
+  description String?  @db.Text
+  logoUrl     String?  @db.Text
+  coverUrl    String?  @db.Text
+  accentColor String   @default("#0A0A0A") // brand өнгө — UI бүхэлдээ үүнээс уншина
+  phone       String?
+  address     String?
+  openTime    String   @default("09:00")
+  closeTime   String   @default("22:00")
+  deliveryFee Int      @default(3000) // ₮, integer
+  minOrder    Int      @default(15000)
+  etaMinutes  Int      @default(35)
+  rating      Float    @default(4.8)
+  isActive    Boolean  @default(true)
+  // Захиалгын дугаарын тоолуур. Атомаар нэмэгддэг тул зэрэг ирсэн
+  // захиалгууд ижил дугаар авах боломжгүй.
+  orderSeq    Int      @default(1000)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users      User[]
+  categories Category[]
+  menuItems  MenuItem[]
+  orders     Order[]
+
+  @@map("tenants")
+}
+
+enum Role {
+  OWNER // рестораны эзэн
+  MANAGER // менежер
+  STAFF // ажилтан
+  CUSTOMER // харилцагч
+}
+
+model User {
+  id           String   @id @default(cuid())
+  tenantId     String
+  name         String
+  email        String
+  phone        String?
+  passwordHash String
+  role         Role     @default(CUSTOMER)
+  avatarUrl    String?  @db.Text
+  // Гарах бүрд нэмэгдэнэ → хуучин refresh token-ууд хүчингүй болно.
+  tokenVersion Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@map("users")
+}
+
+model Category {
+  id        String @id @default(cuid())
+  tenantId  String
+  name      String
+  sortOrder Int    @default(0)
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  menuItems MenuItem[]
+
+  @@index([tenantId])
+  @@map("categories")
+}
+
+model MenuItem {
+  id          String   @id @default(cuid())
+  tenantId    String
+  categoryId  String
+  name        String
+  description String?  @db.Text
+  imageUrl    String?  @db.Text
+  price       Int // ₮ — integer, float хэзээ ч биш
+  isAvailable Boolean  @default(true)
+  isPopular   Boolean  @default(false)
+  prepMinutes Int      @default(15)
+  calories    Int?
+  tags        String   @default("") // "шинэ,цагаан хоол" — таслалаар
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category       Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  modifierGroups ModifierGroup[]
+  orderItems     OrderItem[]
+
+  @@index([tenantId])
+  @@index([categoryId])
+  @@map("menu_items")
+}
+
+model ModifierGroup {
+  id         String  @id @default(cuid())
+  menuItemId String
+  name       String // "Хэмжээ", "Нэмэлт"
+  required   Boolean @default(false)
+  maxSelect  Int     @default(1) // 1 = radio, >1 = checkbox
+  sortOrder  Int     @default(0)
+
+  menuItem MenuItem         @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  options  ModifierOption[]
+
+  @@index([menuItemId])
+  @@map("modifier_groups")
+}
+
+model ModifierOption {
+  id         String @id @default(cuid())
+  groupId    String
+  name       String
+  priceDelta Int    @default(0)
+  sortOrder  Int    @default(0)
+
+  group ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@map("modifier_options")
+}
+
+enum OrderStatus {
+  PENDING // хүлээгдэж буй
+  CONFIRMED // баталгаажсан
+  PREPARING // бэлтгэж буй
+  DELIVERING // хүргэлтэнд гарсан
+  COMPLETED // хүргэгдсэн
+  CANCELLED // цуцлагдсан
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  tenantId      String
+  orderNo       Int // tenant дотор дараалсан дугаар — харилцагчид харуулах
+  // Хянах холбоосын нууц түлхүүр. orderNo дараалсан тул түүгээр
+  // хандах боломжтой байвал бүх захиалгыг дарааллаар нь уншиж болно.
+  trackToken    String      @unique @default(cuid())
+  userId        String?
+  customerName  String
+  customerPhone String
+  district      String
+  addressLine   String      @db.Text
+  note          String?     @db.Text
+  status        OrderStatus @default(PENDING)
+  subtotal      Int
+  deliveryFee   Int
+  total         Int
+  paymentMethod String      @default("CASH") // CASH | CARD (Stripe дараа)
+  isPaid        Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  tenant Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items  OrderItem[]
+
+  @@unique([tenantId, orderNo])
+  @@index([tenantId, status])
+  @@index([userId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String
+  menuItemId String?
+  name       String // snapshot — цэс өөрчлөгдсөн ч захиалга хэвээр
+  imageUrl   String? @db.Text
+  unitPrice  Int
+  quantity   Int
+  options    String  @default("") // "Том, Нэмэлт бяслаг"
+  lineTotal  Int
+
+  order    Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem? @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@map("order_items")
+}

@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: masteurent-api
+    runtime: node
+    plan: free
+    region: singapore
+    # Workspace root-оос суулгана — apps/api нь npm workspace гишүүн.
+    #
+    # `--include=dev` ЗААВАЛ: доор NODE_ENV=production тавьсан тул `npm ci`
+    # анхдагчаар devDependencies-ийг алгасна. Гэтэл `tsc` (build) болон
+    # `prisma` CLI (generate) хоёул devDependencies дотор байгаа.
+    buildCommand: npm ci --include=dev && npx prisma generate --schema apps/api/prisma/schema.prisma && npm run build -w @hool/api
+    startCommand: npm run start -w @hool/api
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Neon-ийн connection string. Заавал `?sslmode=require` дагавартай.
+      - key: DATABASE_URL
+        sync: false
+      # Vercel дээрх web-ийн бүтэн хаяг. CORS болон Stripe-ийн буцах зам
+      # хоёулаа эндээс уншина — ташуу зураасгүй.
+      - key: WEB_ORIGIN
+        sync: false
+      # Энэ сервисийн өөрийн нь хаяг. QPay callback, Stripe redirect тийш буцна.
+      - key: PUBLIC_API_URL
+        sync: false
+      # Web болон api өөр домэйн дээр тул refresh cookie cross-site явна.
+      # 'none' биш бол нэвтрэлт production дээр эвдэрнэ.
+      - key: COOKIE_SAMESITE
+        value: none
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_CURRENCY
+        value: mnt
+      - key: VERIFY_MN_API_KEY
+        sync: false

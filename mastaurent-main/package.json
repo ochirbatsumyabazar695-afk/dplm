@@ -1,0 +1,27 @@
+{
+  "name": "hool-saas",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "postinstall": "npm run prisma:generate -w @hool/api",
+    "prisma:generate": "npm run prisma:generate -w @hool/api",
+    "dev": "concurrently -n api,web -c magenta,cyan --kill-others \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:clean": "node scripts/free-ports.mjs && npm run dev",
+    "ports:free": "node scripts/free-ports.mjs",
+    "dev:api": "npm run dev -w @hool/api",
+    "dev:web": "npm run dev -w @hool/web",
+    "build": "npm run build -w @hool/api && npm run build -w @hool/web",
+    "test": "npm run test -w @hool/api",
+    "tunnel": "cloudflared tunnel --url http://localhost:4000 --no-autoupdate",
+    "db:push": "npm run db:push -w @hool/api",
+    "db:seed": "npm run db:seed -w @hool/api",
+    "db:studio": "npm run db:studio -w @hool/api",
+    "setup": "npm install && npm run db:push && npm run db:seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
