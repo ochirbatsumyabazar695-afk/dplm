@@ -12,7 +12,7 @@ import {
   verifyRefresh,
 } from '../lib/jwt.js';
 import { authLimiter } from '../lib/rateLimit.js';
-import { requireAccount, requireMember, requireStaff } from '../middleware/auth.js';
+import { requireAccount, requireMember } from '../middleware/auth.js';
 import { resolveTenant } from '../middleware/tenant.js';
 
 import { createVerifySession, checkSessionStatus } from '../lib/verifyMn.js';
@@ -331,16 +331,26 @@ authRouter.get(
   }),
 );
 
-/** Dashboard: ажилтны гишүүнчлэл. Эрхгүй бол 403. */
+/**
+ * Dashboard: ажилтны гишүүнчлэл.
+ *
+ * Энгийн USER нэвтэрсэн үед энэ endpoint-ийг нүүр хуудас role routing хийхдээ
+ * мөн дууддаг. Тэр тохиолдол алдаа биш тул 403 бус `user: null` буцаана.
+ * Харин нэвтрээгүй хүсэлт requireAccount-аар 401 хэвээр.
+ */
 authRouter.get(
   '/staff',
-  requireStaff,
+  requireAccount,
   asyncHandler(async (req, res) => {
-    const user = await prisma.user.findUnique({
-      where: { id: req.member!.userId },
+    const user = await prisma.user.findFirst({
+      where: {
+        accountId: req.account!.id,
+        role: { in: ['DIRECTOR', 'MANAGER', 'CASHIER', 'KITCHEN', 'DRIVER'] },
+        isActive: true,
+      },
+      orderBy: { createdAt: 'asc' },
       select: { id: true, name: true, email: true, phone: true, role: true, tenantId: true },
     });
-    if (!user) throw notFound('Хэрэглэгч олдсонгүй');
     res.json({ user });
   }),
 );
