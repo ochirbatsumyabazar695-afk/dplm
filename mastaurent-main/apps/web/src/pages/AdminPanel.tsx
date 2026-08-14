@@ -1,9 +1,9 @@
-import { Link, NavLink, Navigate } from 'react-router-dom';
+import { NavLink, Navigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, ApiError } from '../lib/api';
-import { useAccount } from '../store/auth';
+import { useAccount, useSignOut } from '../store/auth';
 import { Button, Card, EmptyState, Page, Skeleton, SmartImage } from '../components/ui';
 import { cn } from '../lib/cn';
 
@@ -18,6 +18,7 @@ export function AdminShell({
   children: React.ReactNode;
 }) {
   const { account, ready, isSignedIn } = useAccount();
+  const signOut = useSignOut();
 
   // AdminRequests-тэй ижил хамгаалалт. Сервер тал `requirePlatformAdmin`-аар
   // хаалттай тул өгөгдөл алдагдахгүй ч, эрхгүй хүнд админы бүрхүүл
@@ -35,12 +36,13 @@ export function AdminShell({
 
   return (
     <Page className="mx-auto max-w-4xl px-5 pt-12 sm:px-8">
-      <Link
-        to="/"
+      <button
+        type="button"
+        onClick={() => void signOut({ redirectUrl: '/login' })}
         className="inline-flex items-center gap-1.5 text-[13.5px] text-muted transition-colors hover:text-ink"
       >
         <ArrowLeft size={15} /> Masteurent
-      </Link>
+      </button>
 
       <h1 className="mt-5 text-[28px] font-semibold tracking-[-0.03em]">{title}</h1>
       <p className="mt-1 text-muted">{subtitle ?? `Платформын админ — ${account?.email ?? ''}`}</p>
