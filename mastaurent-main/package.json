@@ -6,7 +6,6 @@
     "apps/*"
   ],
   "scripts": {
-    "postinstall": "npm run prisma:generate -w @hool/api",
     "prisma:generate": "npm run prisma:generate -w @hool/api",
     "dev": "concurrently -n api,web -c magenta,cyan --kill-others \"npm:dev:api\" \"npm:dev:web\"",
     "dev:clean": "node scripts/free-ports.mjs && npm run dev",
